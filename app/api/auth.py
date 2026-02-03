@@ -1,5 +1,7 @@
 from fastapi import APIRouter, status
 from app.schemas.auth import RegisterRequest, RegisterResponse
+from pydantic import BaseModel, EmailStr
+from app.services.jwt_service import create_access_token
 
 router = APIRouter()
 
@@ -16,3 +18,14 @@ def register(payload: RegisterRequest) -> RegisterResponse:
         email=payload.email,
         full_name=payload.full_name,
     )
+
+class LoginRequest(BaseModel):
+    email: EmailStr
+    password: str
+
+@router.post("/login")
+def login(payload: LoginRequest) -> dict:
+    # TODO later: validate against DB
+    fake_user = {"id": 1, "email": str(payload.email), "full_name": "Current User"}
+    token = create_access_token(fake_user)
+    return {"access_token": token, "token_type": "bearer"}
