@@ -6,7 +6,7 @@ from pydantic import BaseModel, EmailStr
 from app.db.deps import get_db
 from app.db.models import User
 from app.schemas.user import RegisterRequest, UserPublic
-from app.services.password_service import hash_password
+from app.services.password_service import hash_password, verify_password
 from app.services.jwt_service import create_access_token
 
 router = APIRouter()
@@ -39,8 +39,23 @@ def register(payload: RegisterRequest, db: Session = Depends(get_db)) -> UserPub
     return UserPublic(id=user.id, email=user.email, full_name=user.full_name)
 
 @router.post("/login")
-def login(payload: LoginRequest) -> dict:
-    # TODO: next step -> real login with DB + verify_password
-    fake_user = {"id": 1, "email": str(payload.email), "full_name": "Current User"}
-    token = create_access_token(fake_user)
+def login(payload: LoginRequest, db: Session = Depends(get_db)) -> dict:
+    stmt = select(User).where(User.email == str(payload.email))
+    user = db.execute(stmt).scalar_one_or_none()
+
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid credentials",
+        )
+
+    if not verify_password(payload.password, user.password_hash):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid credentials",
+        )
+
+    token = create_access_token(
+        {"id": user.id, "email": user.email, "full_name": user.full_name}
+    )
     return {"access_token": token, "token_type": "bearer"}
