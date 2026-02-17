@@ -10,6 +10,10 @@ class Settings(BaseSettings):
     # DB
     DATABASE_URL: str
 
+    # Logging
+    LOG_LEVEL: str = "INFO"
+    LOG_FORMAT: str = "console"
+
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",
