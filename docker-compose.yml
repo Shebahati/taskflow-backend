@@ -15,7 +15,7 @@ services:
     build: .
     container_name: taskflow_backend
     env_file:
-      - .env
+      - .env.docker
     depends_on:
       - db
     ports:
